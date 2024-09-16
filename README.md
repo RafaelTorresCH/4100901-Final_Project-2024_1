@@ -1,5 +1,5 @@
 # Advanced Turn Hazard Lights System
-Diseñar un sistema de luces direccionales avanzadas con conectividad a internet para monitorización y control remoto, integrando periféricos físicos (botones, LEDs, teclado hexadecimal), comunicación en red utilizando el módulo ESP01, y visualización de información en una pantalla OLED SSD1306.
+[Ref](https://www.youtube.com/watch?v=3wZVLvbsBrc) - Sistema de luces direccionales avanzadas con conectividad a internet para monitorización y control remoto, integrando periféricos físicos (botones, LEDs, teclado hexadecimal), comunicación en red utilizando el módulo ESP01, y visualización de información en una pantalla OLED SSD1306.
 
 ## Objetivos del Proyecto:
 * Demostrar las habilidades desarrolladas en el diseño de sistemas embebidos con múltiples periféricos.
@@ -10,7 +10,7 @@ Diseñar un sistema de luces direccionales avanzadas con conectividad a internet
 ## Requerimientos Funcionales:
 
 ### Luces Direccionales:
-* Implementar un sistema de luces direccionales con comportamiento similar al de ]Tesla Model 3](https://www.youtube.com/watch?v=3wZVLvbsBrc).
+* Implementar un sistema de luces direccionales con comportamiento similar al de [Tesla Model 3](https://www.youtube.com/watch?v=3wZVLvbsBrc).
 * Controlar las luces con botones físicos y comandos remotos vía internet.
 
 ### Teclado Hexadecimal:
