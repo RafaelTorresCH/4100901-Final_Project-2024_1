@@ -1,39 +1,22 @@
-# Advanced Turn Hazard Lights System
-[Ref](https://www.youtube.com/watch?v=3wZVLvbsBrc) - Sistema de luces direccionales avanzadas con conectividad a internet para monitorización y control remoto, integrando periféricos físicos (botones, LEDs, teclado hexadecimal), comunicación en red utilizando el módulo ESP01, y visualización de información en una pantalla OLED SSD1306.
+Proyecto: Advanced Turn Hazard Lights System
+Descripción
+Este proyecto es un sistema avanzado de luces direccionales que utiliza un teclado hexadecimal para controlar las señales de giro (izquierda, derecha y luces de parqueo) 
+en un vehículo. Además, incluye conectividad a internet para la monitorización y control remoto, integrando diversos periféricos como un módulo OLED 
+para mostrar mensajes y un módulo ESP01 para comunicación en red. También cuenta con la capacidad de bloqueo y desbloqueo del sistema a través de teclas específicas en el teclado.
+Funcionalidades
 
-## Objetivos del Proyecto:
-* Demostrar las habilidades desarrolladas en el diseño de sistemas embebidos con múltiples periféricos.
-* Mostrar información en tiempo real sobre el estado del sistema utilizando la pantalla OLED SSD1306.
-* Crear una plataforma que permita el control remoto de sistemas físicos en tiempo real.
-* Implementar conectividad a internet en un sistema embebido usando un módulo ESP01.
+1. Control de luces direccionales:
+   - Las teclas `1`, `2`, y `3` encienden las luces direccionales (izquierda, parqueo y derecha, respectivamente).
+   - La tecla `*` apaga todas las luces.
 
-## Requerimientos Funcionales:
+2. Sistema de bloqueo y desbloqueo:
+   - Tecla `A`: Desbloquea el sistema para poder activar las luces.
+   - Tecla `B`: Bloquea el sistema, desactivando todas las luces.
 
-### Luces Direccionales:
-* Implementar un sistema de luces direccionales con comportamiento similar al de [Tesla Model 3](https://www.youtube.com/watch?v=3wZVLvbsBrc).
-* Controlar las luces con botones físicos y comandos remotos vía internet.
+3. Validación de contraseña:
+   - Se debe ingresar una contraseña de dos dígitos (por defecto "11") a través del teclado hexadecimal para desbloquear el sistema y acceder a las funcionalidades de control de luces.
 
-### Teclado Hexadecimal:
-* Permitir la entrada de comandos específicos para modificar el comportamiento del sistema o encender/apagar luces.
+4. Modo de baja potencia:
+   - El sistema entra en modo de bajo consumo si no hay actividad durante 10 segundos, conservando energía hasta que se detecte una nueva acción.
 
-### Consola Serial:
-* Interactuar con el sistema a través de una consola en el PC usando USART2.
 
-### Pantalla OLED SSD1306:
-* Mostrar el estado actual de las luces direccionales, el estado de la conexión a internet entre otros valores del sistema.
-
-### Conexión a Internet:
-* Utilizar el ESP01 con el stack ESP-Link para conectarse a una red Wi-Fi.
-* Permitir el control remoto del sistema a través de comandos enviados por internet mediante el ESP01.
-* Mantener la hora del sistema usando la conexion a internet y el periférico RTC del STM32L476RG.
-
-## Requerimientos No Funcionales:
-
-### Tiempo de Respuesta:
-* El sistema debe ser capaz de reaccionar a comandos remotos en menos de 1 segundo.
-
-### Mantenimiento:
-* El código debe estar modularizado para permitir modificaciones o mejoras futuras (particularmente en la librería del teclado, el buffer y la pantalla OLED).
-
-### Seguridad:
-* Implementar medidas básicas de autenticación para evitar el acceso no autorizado al sistema a través de la conexión a internet.
