@@ -67,6 +67,10 @@ void Error_Handler(void);
 #define LED_HEARTBEAT_GPIO_Port GPIOA
 #define LED_LEFT_Pin GPIO_PIN_7
 #define LED_LEFT_GPIO_Port GPIOA
+#define izquierdo_Pin GPIO_PIN_1
+#define izquierdo_GPIO_Port GPIOB
+#define derecho_Pin GPIO_PIN_2
+#define derecho_GPIO_Port GPIOB
 #define COLUMN_1_Pin GPIO_PIN_10
 #define COLUMN_1_GPIO_Port GPIOB
 #define COLUMN_1_EXTI_IRQn EXTI15_10_IRQn

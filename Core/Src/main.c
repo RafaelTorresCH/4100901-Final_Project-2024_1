@@ -1,9 +1,9 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
+  **************************
   * @file           : main.c
   * @brief          : Main program body
-  ******************************************************************************
+  **************************
   * @attention
   *
   * Copyright (c) 2024 STMicroelectronics.
@@ -13,7 +13,7 @@
   * in the root directory of this software component.
   * If no LICENSE file comes with this software, it is provided AS-IS.
   *
-  ******************************************************************************
+  **************************
   */
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
@@ -22,12 +22,15 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
-
-#include "ssd1306.h"
-#include "ssd1306_fonts.h"
+//
+//#include "ssd1306.h"
+//#include "ssd1306_fonts.h"
 
 #include "ring_buffer.h"
 #include "keypad.h"
+#include "luces.h"
+#include <ctype.h>  // for isdigit
+#include <string.h>  // for strcmp
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -56,10 +59,35 @@ UART_HandleTypeDef huart3;
 #define USART2_BUFFER_SIZE 8
 uint8_t usart2_buffer[USART2_BUFFER_SIZE];
 ring_buffer_t usart2_rb;
-uint8_t usart2_rx;
 
-uint32_t left_toggles = 0;
-uint32_t left_last_press_tick = 0;
+
+uint8_t usart2_rx;
+uint8_t contador;
+uint8_t status = 0;
+uint8_t block_ = 0;
+
+uint8_t recibido_3 =0 ;
+
+
+
+
+//DIEGO
+#define MAX_DIGITS 5 // Ajusta según la cantidad máxima de dígitos
+char digits[MAX_DIGITS+1] = {0}; // Arreglo para almacenar los dígitos
+int digit_count = 0;
+
+
+uint8_t desbloqueado=-1;
+
+
+
+#define MAX_PASSWORD_LENGTH 2 // Ajusta según la longitud de tu clave
+char password[] = "11"; // Reemplaza con tu clave deseada
+char input_password[MAX_PASSWORD_LENGTH + 1]; // +1 para el carácter nulo
+int current_index = 0;
+
+void process_keypad_input(uint8_t key_pressed);
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -83,34 +111,125 @@ int _write(int file, char *ptr, int len)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
   /* Data received in USART2 */
-  if (huart->Instance == USART2) {
-	  usart2_rx = USART2->RDR; // leyendo el byte recibido de USART2
-	  ring_buffer_write(&usart2_rb, usart2_rx); // put the data received in buffer
+  if (huart->Instance == USART3) {
+	  usart2_rx = USART3->RDR; // leyendo el byte recibido de USART2
+	  //ring_buffer_write(&usart2_rb, usart2_rx); // put the data received in buffer
+	  //HAL_UART_Transmit(&huart2, &recibido_3, 1,10);
+	  //HAL_UART_Receive_IT(&huart3, &recibido_3, 1); // enable interrupt for USART2 Rx
+
 	  //HAL_UART_Receive_IT(&huart2, &usart2_rx, 1); // enable interrupt to continue receiving
-	  ATOMIC_SET_BIT(USART2->CR1, USART_CR1_RXNEIE); // usando un funcion mas liviana para reducir memoria
+	  //ATOMIC_SET_BIT(USART2->CR1, USART_CR1_RXNEIE); // usando un funcion mas liviana para reducir memoria
   }
 }
+//bool flag = False;
+// Esta función se llamará cuando se presione una tecla
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	uint8_t key_pressed = keypad_scan(GPIO_Pin);
-	if (key_pressed != 0xFF) {
-		printf("Pressed: %c\r\n", key_pressed);
-		return;
-	}
 
-	if (GPIO_Pin == BUTTON_RIGHT_Pin) {
-		HAL_UART_Transmit(&huart2, (uint8_t *)"S1\r\n", 4, 10);
-		if (HAL_GetTick() < (left_last_press_tick + 300)) { // if last press was in the last 300ms
-			left_toggles = 0xFFFFFF; // a long time toggling (infinite)
-		} else {
-			left_toggles = 6;
-		}
-		left_last_press_tick = HAL_GetTick();
-	} else if (GPIO_Pin == BUTTON_LEFT_Pin) {
-		left_toggles = 0;
+    // Leer la tecla presionada
+	char key = keypad_scan(GPIO_Pin);  // Convertir uint8_t a unsigned char
+
+    //control bloqueo
+    //bloquea el sistema
+    if(key == 'A'){
+    	printf("desbloqueado\r\n");
+    	Ublock();
+    	block_ = 1;//DESBLOQUEA
+    	status = 0;
+    }
+    //desbloquea el sistema
+    if(key == 'B'){
+    	printf("bloquedo\r\n");
+    	HAL_GPIO_WritePin(derecho_GPIO_Port,derecho_Pin, 0);
+    	HAL_GPIO_WritePin(izquierdo_GPIO_Port,izquierdo_Pin, 0);
+        	block_ = 2;//BLOQUEA
+        	status = 0;
+     }
+
+    	//control luces
+    //enciende señal izquierda
+    if(key == '1'){
+    	SET_(6,0,0);
+    	HAL_GPIO_WritePin(derecho_GPIO_Port,derecho_Pin, 0);
+    	status = 1;
+
+    }
+    //enciende parqueo
+    if(key == '2'){
+    	SET_(0,0xFF,0);
+    	HAL_GPIO_WritePin(derecho_GPIO_Port,derecho_Pin, 0);
+    	    	HAL_GPIO_WritePin(izquierdo_GPIO_Port,izquierdo_Pin, 0);
+    	 status = 2;
+
+
+   	}
+    //enciende señal derecha
+    if(key == '3'){
+    	SET_(0,0,6);
+    	HAL_GPIO_WritePin(izquierdo_GPIO_Port,izquierdo_Pin, 0);
+    	status = 3;
+
 	}
+    //apaga el sistema
+    if(key == '*'){
+    	HAL_GPIO_WritePin(derecho_GPIO_Port,derecho_Pin, 0);
+    	HAL_GPIO_WritePin(izquierdo_GPIO_Port,izquierdo_Pin, 0);
+
+    	SET_(0,0,0);
+    	status = 4;
+
+    }
+
+
+
 }
+
+// PROGRAMACION DIEGO
+
+
+
+void process_keypad_input(uint8_t key_pressed) {
+    if (isdigit(key_pressed)) {
+        // Agregar dígito a la clave
+        input_password[current_index++] = key_pressed;
+        input_password[current_index] = '\0'; // Agrega el terminador nulo al final
+        printf("%c",input_password[current_index++]);
+    } else if (key_pressed == '#') {
+        // Validar la clave solo al presionar '#'
+        if (strcmp(input_password, password) == 0) {
+            printf("Clave correcta!\n");
+            desbloqueado=1;
+
+
+
+
+
+            // Aquí puedes hacer otras acciones como activar un LED o abrir una puerta
+        } else {
+
+        	desbloqueado=0;
+            printf("Clave incorrecta!\n");
+
+        }
+        // Resetea para una nueva entrada de clave
+        memset(input_password, 0, sizeof(input_password));
+        current_index = 0;
+    } else if (key_pressed == '*') {
+        // Resetea la entrada cuando se presiona '*'
+        printf("Reseteando clave...\n");
+        memset(input_password, 0, sizeof(input_password));
+        current_index = 0;
+        ssd1306_Fill(Black); // Limpiar la pantalla
+        ssd1306_UpdateScreen();
+    }
+}
+
+
+
+
+
+
+
 
 void low_power_mode()
 {
@@ -143,6 +262,7 @@ void low_power_mode()
 
 	printf("Awake\r\n");
 }
+
 /* USER CODE END 0 */
 
 /**
@@ -178,10 +298,13 @@ int main(void)
   MX_USART2_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-
   ssd1306_Init();
-  ssd1306_SetCursor(25, 30);
-  ssd1306_WriteString("Hello World!", Font_7x10, White);
+  ssd1306_SetCursor(25, 10);  // Baja el cursor 10 píxeles más abajo para la segunda línea
+   ssd1306_WriteString("   LOCKED", Font_7x10, White);  // Escribe el segundo mensaje
+
+  ssd1306_SetCursor(25, 30);  // Establece el cursor en la posición (25, 30)
+  ssd1306_WriteString("WELCOME", Font_11x18, White);
+
   ssd1306_UpdateScreen();
 
   ring_buffer_init(&usart2_rb, usart2_buffer, USART2_BUFFER_SIZE);
@@ -190,19 +313,43 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   printf("Starting...\r\n");
-  //HAL_UART_Receive_IT(&huart2, &usart2_rx, 1); // enable interrupt for USART2 Rx
-  ATOMIC_SET_BIT(USART2->CR1, USART_CR1_RXNEIE); // usando un funcion mas liviana para reducir memoria
+  //HAL_UART_Receive_IT(&huart3, &usart2_rx, 1); // enable interrupt for USART2 Rx
+  //HAL_UART_Receive_IT(&huart3, &recibido_3, 1); // enable interrupt for USART2 Rx
+  //ATOMIC_SET_BIT(USART2->CR1, USART_CR1_RXNEIE); // usando un funcion mas liviana para reducir memoria
   while (1) {
-	  if (ring_buffer_is_full(&usart2_rb) != 0) {
-		  printf("Received:\r\n");
-		  while (ring_buffer_is_empty(&usart2_rb) == 0) {
-			  uint8_t data;
-			  ring_buffer_read(&usart2_rb, &data);
-			  HAL_UART_Transmit(&huart2, &data, 1, 10);
-		  }
-		  printf("\r\n");
+
+//	   	   printf("played...\r\n");
+//
+
+
+	  if(block_ == 1){
+		  if(status == 1){
+		  	  	   	turn_signal_left();
+
+		  	  }
+		  	  	   if(status == 2){
+
+		  	  	   park_signal();
+		  	 }
+		  	 if(status == 3){
+
+		  	  	 turn_signal_right();
+		  	  }
+		  	 if(status == 4){
+		  			 park_signal();
+		  			 turn_signal_left();
+		  			 turn_signal_right();
+		  			 SYSTEM_0FF();
+
+		  			 status = -1;
+		  	 }
 	  }
-	  low_power_mode();
+	  if(block_ == 2){
+		  block();
+	  }
+
+	 HAL_Delay(1);  // Pausa para no saturar el sistema
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -233,7 +380,13 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.MSIState = RCC_MSI_ON;
   RCC_OscInitStruct.MSICalibrationValue = 0;
   RCC_OscInitStruct.MSIClockRange = RCC_MSIRANGE_6;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_MSI;
+  RCC_OscInitStruct.PLL.PLLM = 1;
+  RCC_OscInitStruct.PLL.PLLN = 40;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -243,12 +396,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_MSI;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
   {
     Error_Handler();
   }
@@ -270,7 +423,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x00000E14;
+  hi2c1.Init.Timing = 0x10D19CE4;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -392,13 +545,13 @@ static void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(GPIOA, LED_HEARTBEAT_Pin|LED_LEFT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, izquierdo_Pin|derecho_Pin|LED_RIGHT_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(ROW_1_GPIO_Port, ROW_1_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, ROW_2_Pin|ROW_4_Pin|ROW_3_Pin, GPIO_PIN_SET);
-
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LED_RIGHT_GPIO_Port, LED_RIGHT_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pins : BUTTON_LEFT_Pin BUTTON_RIGHT_Pin */
   GPIO_InitStruct.Pin = BUTTON_LEFT_Pin|BUTTON_RIGHT_Pin;
@@ -412,6 +565,13 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : izquierdo_Pin derecho_Pin LED_RIGHT_Pin */
+  GPIO_InitStruct.Pin = izquierdo_Pin|derecho_Pin|LED_RIGHT_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pin : COLUMN_1_Pin */
   GPIO_InitStruct.Pin = COLUMN_1_Pin;
@@ -444,13 +604,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : LED_RIGHT_Pin */
-  GPIO_InitStruct.Pin = LED_RIGHT_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LED_RIGHT_GPIO_Port, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
