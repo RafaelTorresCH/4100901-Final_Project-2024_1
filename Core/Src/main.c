@@ -121,7 +121,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	  //ATOMIC_SET_BIT(USART2->CR1, USART_CR1_RXNEIE); // usando un funcion mas liviana para reducir memoria
   }
 }
-//bool flag = False;
+
 // Esta función se llamará cuando se presione una tecla
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
@@ -130,14 +130,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	char key = keypad_scan(GPIO_Pin);  // Convertir uint8_t a unsigned char
 
     //control bloqueo
-    //bloquea el sistema
+    //desbloquea el sistema
     if(key == 'A'){
     	printf("desbloqueado\r\n");
     	Ublock();
     	block_ = 1;//DESBLOQUEA
     	status = 0;
     }
-    //desbloquea el sistema
+    //bloquea el sistema
     if(key == 'B'){
     	printf("bloquedo\r\n");
     	HAL_GPIO_WritePin(derecho_GPIO_Port,derecho_Pin, 0);
@@ -184,8 +184,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 
 }
 
-// PROGRAMACION DIEGO
-
+//  seguridad del codigo, a traves de lectura por teclado
 
 
 void process_keypad_input(uint8_t key_pressed) {
@@ -321,21 +320,24 @@ int main(void)
 //	   	   printf("played...\r\n");
 //
 
-
+	  //bucle principal
+	  //block en 1 inidica que el sistema esta desbloqueado, se procede a las ejecuciones que indique el usuario
 	  if(block_ == 1){
 		  if(status == 1){
+			  	  	  //direccional izquierda
 		  	  	   	turn_signal_left();
 
 		  	  }
 		  	  	   if(status == 2){
-
+		  	  		//parqueo
 		  	  	   park_signal();
 		  	 }
 		  	 if(status == 3){
-
+		  		//direccional derecha
 		  	  	 turn_signal_right();
 		  	  }
 		  	 if(status == 4){
+		  		 //sistema apagado
 		  			 park_signal();
 		  			 turn_signal_left();
 		  			 turn_signal_right();

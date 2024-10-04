@@ -6,7 +6,7 @@
  */
 
 #include "luces.h"
-
+//definiciones de variables utilizadas
 uint32_t left_toggles = 0;
 uint32_t left_last_press_tick = 0;
 
@@ -22,7 +22,7 @@ uint32_t park_last_press_tick = 0;
 uint8_t park_signal_state = 0;
 
 
-// Función para mostrar flecha hacia la izquierda
+// Función para pintar en pantalla
 void block(void) {
 	ssd1306_Fill(Black);
 	ssd1306_SetCursor(25, 10);  // Baja el cursor 10 píxeles más abajo para la segunda línea
@@ -91,12 +91,13 @@ void update_oled_park(void) {
 
 }
 
-//}
+//esta es la funcion que se encarga de gestionar todas las direccionales
 void SET_(uint8_t x, uint8_t y,  uint8_t z ){
 	park_toggles = y;
 	left_toggles = x;
 	right_toggles = z;
 }
+//selecciona cual de las funciones de pantalla utilizar
 void handle_key_event(char key) {
     switch (key) {
         case '1':  // Tecla 1 presionada: Flecha izquierda encendida7
@@ -120,9 +121,10 @@ void handle_key_event(char key) {
             break;
     }
 }
+//direccional izquierda
 void turn_signal_left(void)
     {
-;
+
     	static uint32_t turn_toggle_tick = 0;
     	if (turn_toggle_tick < HAL_GetTick()) {
     		if (left_toggles > 0) {
@@ -152,7 +154,7 @@ void turn_signal_left(void)
     }
 
 
-
+//direccional derecha
     void turn_signal_right(void){
 
         static uint32_t turn_toggle_tick2 = 0;
